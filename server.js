@@ -4,14 +4,24 @@ import fetch from 'node-fetch'
 import {validateBody} from './validators.js'
 import expressWs from 'express-ws'
 import {z} from 'zod'
-dotenv.config({path: '../.env'})
+import path from "path";
+import { fileURLToPath } from "url";
+dotenv.config({ path: "../.env" });
 
-const state = {}
+const state = {};
 
-const appWs = expressWs(express())
-const app = appWs.app
-const port = process.env.PORT || 3001
-const COUNTDOWN_SECONDS_MS = 5000
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const appWs = expressWs(express());
+const app = appWs.app;
+const port = process.env.PORT || 3001;
+const COUNTDOWN_SECONDS_MS = 5000;
+
+app.use(express.static(path.join(__dirname, "app/dist")));
+
+app.get("*", function (_req, res) {
+  res.sendFile(path.join(__dirname, "app/dist", "index.html"));
+});
 
 async function validateInstance(instanceId) {
   // validate activity instance exists
