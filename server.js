@@ -111,7 +111,6 @@ function broadcastState(instanceId) {
 
 app.ws("/api/ws/:instanceId", async (ws, req) => {
   const instanceId = req.params.instanceId;
-  console.log("ws route hit", req.params);
 
   if (state[instanceId] == null) {
     state[instanceId] = {
@@ -125,7 +124,6 @@ app.ws("/api/ws/:instanceId", async (ws, req) => {
   }
 
   ws.on("message", (msg) => {
-    console.log("ws message");
     if (state[instanceId] == null) {
       return;
     }
