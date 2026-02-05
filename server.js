@@ -14,6 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const appWs = expressWs(express());
 const app = appWs.app;
+const wss = appWs.getWss();
 const port = process.env.PORT || 3001;
 const COUNTDOWN_SECONDS_MS = 5000;
 
@@ -304,6 +305,20 @@ app.ws("/api/ws/:instanceId", async (ws, req) => {
     ws.close();
   }
 });
+
+wss.on("connection", (ws) => {
+  let intervalId = null;
+  intervalId = setInterval(function () {
+    console.log("sending keep alive ping");
+    ws.send("ping");
+  }, 30000);
+
+  ws.on("close", function () {
+    console.log("clearing ping interval");
+    clearInterval(intervalId);
+  });
+});
+
 
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`)
