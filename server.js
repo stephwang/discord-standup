@@ -70,7 +70,7 @@ const handleSkipThrottled = throttle((instanceId) => {
       (durationMs - (elapsed % durationMs)),
   );
   broadcastState(instanceId);
-}, 1000);
+}, 2000);
 
 // Allow express to parse JSON bodies
 app.use(express.json());
