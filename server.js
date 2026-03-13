@@ -37,15 +37,41 @@ async function validateInstance(instanceId) {
   );
 
   if (validateResponse.status !== 200) {
-    console.log(
-      "validate instance error:",
-      validateResponse.status,
-      validateResponse.headers.raw()
-    );
+    console.log("validate instance error:", validateResponse);
   }
 
   return validateResponse.status === 200;
 }
+
+function debounce(func, wait) {
+  let timeout;
+
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+const handleSkipDebounced = debounce((instanceId) => {
+  console.log("registering skip");
+  const now = state[instanceId].isPaused
+    ? state[instanceId].pausedAt
+    : new Date();
+  const elapsed = now - state[instanceId].startedAt;
+  const durationMs = state[instanceId].duration * 1000;
+
+  // move startedAt by time remaining for current speaker
+  state[instanceId].startedAt = new Date(
+    state[instanceId].startedAt.getTime() -
+      (durationMs - (elapsed % durationMs)),
+  );
+  broadcastState(instanceId);
+}, 500);
 
 // Allow express to parse JSON bodies
 app.use(express.json());
@@ -224,24 +250,7 @@ app.ws("/api/ws/:instanceId", async (ws, req) => {
         return;
       }
 
-      const now = state[instanceId].isPaused
-        ? state[instanceId].pausedAt
-        : new Date();
-      const elapsed = now - state[instanceId].startedAt;
-      const durationMs = state[instanceId].duration * 1000;
-      const currentIndex = Math.floor(elapsed / durationMs);
-
-      if (currentIndex + 1 >= state[instanceId].members.length) {
-        // no more members to skip to
-        return;
-      }
-
-      // move startedAt by time remaining for current speaker
-      state[instanceId].startedAt = new Date(
-        state[instanceId].startedAt.getTime() -
-          (durationMs - (elapsed % durationMs))
-      );
-      broadcastState(instanceId);
+      handleSkipDebounced(instanceId);
     } else if (parsed.type === "reset") {
       /*
       {

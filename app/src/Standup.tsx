@@ -175,11 +175,9 @@ export function Standup({
                 Resume
               </button>
             )}
-            {nextSpeaker != null && (
-              <button className="standup__controlButton" onClick={skip}>
-                Skip
-              </button>
-            )}
+            <button className="standup__controlButton" onClick={skip}>
+              Skip
+            </button>
           </div>
         </div>
         {nextSpeaker != null ? (
