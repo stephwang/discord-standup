@@ -43,21 +43,20 @@ async function validateInstance(instanceId) {
   return validateResponse.status === 200;
 }
 
-function debounce(func, wait) {
-  let timeout;
+function throttle(mainFunction, delay) {
+  let timeout = null;
 
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
+  return (...args) => {
+    if (timeout === null) {
+      mainFunction(...args);
+      timeout = setTimeout(() => {
+        timeout = null;
+      }, delay);
+    }
   };
 }
 
-const handleSkipDebounced = debounce((instanceId) => {
+const handleSkipThrottled = throttle((instanceId) => {
   console.log("registering skip");
   const now = state[instanceId].isPaused
     ? state[instanceId].pausedAt
@@ -71,7 +70,7 @@ const handleSkipDebounced = debounce((instanceId) => {
       (durationMs - (elapsed % durationMs)),
   );
   broadcastState(instanceId);
-}, 500);
+}, 1000);
 
 // Allow express to parse JSON bodies
 app.use(express.json());
@@ -250,7 +249,7 @@ app.ws("/api/ws/:instanceId", async (ws, req) => {
         return;
       }
 
-      handleSkipDebounced(instanceId);
+      handleSkipThrottled(instanceId);
     } else if (parsed.type === "reset") {
       /*
       {
